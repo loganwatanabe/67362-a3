@@ -2,64 +2,56 @@ cl="cl"
 
 from digitclass import *
 from helpers import *
-
-def d1(images, labels):
+def test_env(images, labels):
     global cl
     cl=classifier(getpixels)
-    for i in range (0, 5000):
-        cl.train(show_nth_image(images, i), show_nth_label(labels, i)) 
-    print( cl.fcount(0, ' ') )
+    for i in range(1,2):
+        cl.train(show_nth_image(images, i), show_nth_label(labels, i))
+    print cl.fc
+    
+def train(cl, images, labels):
+    # global cl
+    # cl=classifier(getpixels)
+    label_length = len([int(line.strip()) for line in open(labels)])
+    for i in range(1, 1001):
+        cl.train(show_nth_image(images, i), show_nth_label(labels, i))
 
-
-# def d2():
-#     global cl
-#     cl=classifier( getwords ) 
-#     sampletrain( cl ) 
-#     print( cl.fprob( 'quick', 'good' ) ) # 0.666666
-#     print( cl.fprob( 'money', 'good' ) ) # 0
-#     print( cl.fprob( 'money', 'bad' )  ) # 0.5
-
-
-# def d3():
-#     global cl
-#     cl=classifier(getwords) 
-#     sampletrain(cl)
-#     print()
-#     print( "fprob( money, good) ", cl.fprob( 'money', 'good' ))
-#     print( "wprob( money, good) ",cl.weightedprob( 'money', 'good', cl.fprob )) # 0.25
-#     print()
-#     sampletrain(cl)
-#     print()
-#     print( "wprob( money, good) ", cl.weightedprob( 'money', 'good', cl.fprob)) # 0.166666666 
-#     print( "fprob( money, good) ", cl.fprob( 'money', 'good' ))
- 
-
-# def d4():
-#     global cl
-#     cl=naivebayes(getwords)     
-#     sampletrain(cl)
-#     print()
-#     print( 'good> ', cl.prob('quick rabbit', 'good')) # 0.15624999999999997
-#     print()
-#     print( 'bad> ', cl.prob('quick rabbit', 'bad')) # 0.050000000000000003 
-
-
-# def d5():
-#     global cl
-#     cl=naivebayes(getwords) 
-#     sampletrain(cl)
-#     print()
-#     print( '-----------')
-#     print( '1> ', cl.classify('quick rabbit', default='unknown'))
-#     print()
-#     print( '2> ', cl.classify('quick money', default='unknown'))
-#     print()
-#     cl.setthreshold('bad', 3.0)
-#     print( '3> ', cl.classify('quick money', default='unknown'))
-#     print()
-#     for i in range(10):
-#         sampletrain(cl)
-#         print()
-#     print()
-#     print( '4> ', cl.classify('quick money', default='unknown'))
-
+def test(images, labels):
+    global cl
+    cl=naivebayes(getpixels)
+    train(cl, "trainingimages.txt", "traininglabels.txt")
+    results = {}
+    for num in cl.categories():
+        results[num]={}
+        results[num].setdefault("total",0)
+        for init in range(0,10):
+            results[num].setdefault(init,0)
+    for i in range(1, 501):
+        n = show_nth_label(labels, i)
+        guess = cl.classify(show_nth_image(images,i), default='unknown')
+        
+        results[n][guess] += 1
+        results[n]["total"] += 1
+    
+    accuracy = {}
+    total_correct = 0
+    total_total = 0
+    for r in results:
+        if results[r]["total"]!=0:
+            accuracy[r] = float(results[r][r])/float(results[r]["total"])
+            total_correct += results[r][r]
+            total_total += results[r]["total"]
+    print accuracy
+    overall = float(total_correct)/float(total_total)
+    print overall
+    
+    print " "
+    print "Confusion Matrix:   Top=Actual  Vert=Guess"
+    s = "      "
+    print "    ",0,s,1,s,2,s,3,s,4,s,5,s,6,s,7,s,8,s,9,"  "
+    for row in range(0,10):
+        string = str(row)+"  "
+        for col in range(0,len(results[row])-1):
+            percent = round(float(results[row][col])/float(results[row]["total"]), 3)
+            string+= str(percent).zfill(5) + "    "
+        print string
